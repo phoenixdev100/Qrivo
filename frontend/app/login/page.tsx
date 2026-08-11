@@ -7,42 +7,41 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Label, FieldError } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loading: authLoading } = useAuth();
+  const { login, user, loading } = useAuth();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader />
-      </div>
-    );
-  }
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setFormLoading(true);
 
     try {
-      await login(email, password);
+      const user = await login(email, password);
       router.push('/dashboard');
+      // Show toast after navigation
+      setTimeout(() => {
+        showToast('Login successful', 'success');
+      }, 100);
     } catch (err: any) {
       setError(err.message || 'Login failed');
+      showToast(err.message || 'Login failed', 'error');
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -83,8 +82,8 @@ export default function LoginPage() {
               />
             </div>
             {error && <FieldError>{error}</FieldError>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
+            <Button type="submit" className="w-full" disabled={formLoading}>
+              {formLoading ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-slate-600">

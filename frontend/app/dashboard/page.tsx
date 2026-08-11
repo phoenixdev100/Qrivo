@@ -1,17 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   BarChart3,
+  ChevronDown,
   FolderTree,
   LayoutDashboard,
   LogOut,
+  PanelLeft,
   Plus,
   QrCode,
   Settings,
   TrendingUp,
+  User,
   Users,
 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
@@ -25,6 +28,9 @@ export default function DashboardPage() {
   const { user, loading, logout } = useAuth();
   const [qrs, setQrs] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, scans: 0, active: 0 });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -37,6 +43,22 @@ export default function DashboardPage() {
       loadDashboardData();
     }
   }, [user]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    if (userDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [userDropdownOpen]);
 
   const loadDashboardData = async () => {
     try {
@@ -79,36 +101,50 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 page-enter">
-      <div className="flex">
+      <div className="flex min-h-screen">
         {/* Sidebar */}
-        <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex">
-          <div className="flex h-16 items-center gap-2 border-b border-slate-200 px-6">
-            <QrivoIcon />
-            <span className="text-lg font-semibold text-slate-900">Qrivo</span>
+        <aside
+          className={`hidden flex-col border-r border-slate-200 bg-white lg:flex transition-all duration-300 ${
+            sidebarCollapsed ? 'w-16' : 'w-48'
+          }`}
+        >
+          <div className={`flex h-14 items-center border-b border-slate-200 ${sidebarCollapsed ? 'justify-center' : 'justify-between px-4'}`}>
+            <Link href="/" className="flex items-center gap-2">
+              <QrivoIcon />
+              {!sidebarCollapsed && (
+                <span className="text-lg font-semibold text-slate-900">Qrivo</span>
+              )}
+            </Link>
           </div>
-          <nav className="flex-1 space-y-1 p-4">
+          <nav className={`flex-1 ${sidebarCollapsed ? 'space-y-0 p-2' : 'space-y-1 p-4'}`}>
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center rounded-lg text-sm font-medium transition-colors ${
+                  sidebarCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-3 py-2'
+                } ${
                   item.active
                     ? 'bg-brand-50 text-brand-700'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
+                title={sidebarCollapsed ? item.label : undefined}
               >
-                <item.icon className="h-5 w-5" />
-                {item.label}
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                {!sidebarCollapsed && <span>{item.label}</span>}
               </Link>
             ))}
           </nav>
-          <div className="border-t border-slate-200 p-4">
+          <div className={`border-t border-slate-200 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
             <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className={`flex items-center rounded-lg text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 ${
+                sidebarCollapsed ? 'justify-center px-3 py-3' : 'w-full gap-3 px-3 py-2'
+              }`}
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              <LogOut className="h-5 w-5" />
-              Sign out
+              <PanelLeft className="h-5 w-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span>Collapse</span>}
             </button>
           </div>
         </aside>
@@ -116,20 +152,39 @@ export default function DashboardPage() {
         {/* Main content */}
         <main className="flex-1">
           {/* Top bar */}
-          <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 lg:px-8">
+          <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6">
             <div>
-              <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
+              <h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-medium">
-                  {user.name?.charAt(0).toUpperCase()}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-medium hover:bg-brand-200 transition-colors"
+              >
+                {user.name?.charAt(0).toUpperCase()}
+              </button>
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg py-1">
+                  <Link
+                    href="/dashboard/settings"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                    onClick={() => setUserDropdownOpen(false)}
+                  >
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setUserDropdownOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </button>
                 </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-slate-900">{user.name}</p>
-                  <p className="text-xs text-slate-500">{user.email}</p>
-                </div>
-              </div>
+              )}
             </div>
           </header>
 
@@ -141,48 +196,48 @@ export default function DashboardPage() {
             </div>
 
             {/* Stats cards */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">Total QR Codes</p>
-                    <p className="mt-2 text-3xl font-bold text-slate-900">{stats.total}</p>
+                    <p className="text-xs font-medium text-slate-500">Total QR Codes</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">{stats.total}</p>
                   </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-                    <QrCode className="h-6 w-6" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                    <QrCode className="h-5 w-5" />
                   </div>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">Total Scans</p>
-                    <p className="mt-2 text-3xl font-bold text-slate-900">{stats.scans}</p>
+                    <p className="text-xs font-medium text-slate-500">Total Scans</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">{stats.scans}</p>
                   </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 text-green-600">
-                    <TrendingUp className="h-6 w-6" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                    <TrendingUp className="h-5 w-5" />
                   </div>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">Active QR Codes</p>
-                    <p className="mt-2 text-3xl font-bold text-slate-900">{stats.active}</p>
+                    <p className="text-xs font-medium text-slate-500">Active QR Codes</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">{stats.active}</p>
                   </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                    <Users className="h-6 w-6" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <Users className="h-5 w-5" />
                   </div>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">Folders</p>
-                    <p className="mt-2 text-3xl font-bold text-slate-900">0</p>
+                    <p className="text-xs font-medium text-slate-500">Folders</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">0</p>
                   </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
-                    <FolderTree className="h-6 w-6" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                    <FolderTree className="h-5 w-5" />
                   </div>
                 </div>
               </div>

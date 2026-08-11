@@ -7,31 +7,25 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Label, FieldError } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, user, loading } = useAuth();
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader />
-      </div>
-    );
-  }
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,23 +33,30 @@ export default function RegisterPage() {
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      showToast('Passwords do not match', 'error');
       return;
     }
 
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
+      showToast('Password must be at least 8 characters', 'error');
       return;
     }
 
-    setLoading(true);
+    setFormLoading(true);
 
     try {
-      await register(name, email, password);
+      const user = await register(name, email, password);
       router.push('/dashboard');
+      // Show toast after navigation
+      setTimeout(() => {
+        showToast(`Welcome to Qrivo, ${user.name}!`, 'success');
+      }, 100);
     } catch (err: any) {
       setError(err.message || 'Registration failed');
+      showToast(err.message || 'Registration failed', 'error');
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -118,8 +119,8 @@ export default function RegisterPage() {
               />
             </div>
             {error && <FieldError>{error}</FieldError>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create account'}
+            <Button type="submit" className="w-full" disabled={formLoading}>
+              {formLoading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-slate-600">
