@@ -65,7 +65,9 @@ export default function QrCodesPage() {
       const response = await qrApi.list({});
       setQrs(response.items || []);
     } catch (error) {
-      console.error('Failed to load QR codes:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load QR codes:', error);
+      }
     }
   };
 
@@ -82,7 +84,9 @@ export default function QrCodesPage() {
       setDeleteModalOpen(false);
       setQrToDelete(null);
     } catch (error) {
-      console.error('Failed to delete QR code:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to delete QR code:', error);
+      }
     }
   };
 

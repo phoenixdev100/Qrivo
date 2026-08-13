@@ -35,6 +35,13 @@ export default function SettingsPage() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Profile form state
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
   // Password form state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -47,19 +54,13 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Notification preferences
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [scanAlerts, setScanAlerts] = useState(true);
-  const [weeklyReports, setWeeklyReports] = useState(false);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-
-  // Privacy settings
-  const [publicProfile, setPublicProfile] = useState(false);
-  const [analyticsSharing, setAnalyticsSharing] = useState(true);
-
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
+    }
+    if (user) {
+      setProfileName(user.name || '');
+      setProfileEmail(user.email || '');
     }
   }, [user, loading, router]);
 
@@ -79,6 +80,40 @@ export default function SettingsPage() {
       document.removeEventListener('click', handleClickOutside);
     };
   }, [userDropdownOpen]);
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileError('');
+
+    if (!profileName.trim() || !profileEmail.trim()) {
+      setProfileError('Name and email are required');
+      return;
+    }
+
+    setProfileLoading(true);
+
+    try {
+      await usersApi.updateProfile({ name: profileName, email: profileEmail });
+      showToast('Profile updated successfully', 'success');
+      setIsEditingProfile(false);
+    } catch (err: any) {
+      setProfileError(err.message || 'Failed to update profile');
+      showToast(err.message || 'Failed to update profile', 'error');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setProfileName(user?.name || '');
+    setProfileEmail(user?.email || '');
+    setProfileError('');
+    setIsEditingProfile(false);
+  };
+
+  const handleStartEdit = () => {
+    setIsEditingProfile(true);
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,28 +157,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveNotifications = async () => {
-    setNotificationsLoading(true);
-    try {
-      // TODO: Implement API call to save notification preferences
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
-      showToast('Notification preferences saved', 'success');
-    } catch (err: any) {
-      showToast('Failed to save notification preferences', 'error');
-    } finally {
-      setNotificationsLoading(false);
-    }
-  };
-
-  const handlePrivacyChange = async () => {
-    try {
-      // TODO: Implement API call to save privacy settings
-      showToast('Privacy settings saved', 'success');
-    } catch (err: any) {
-      showToast('Failed to save privacy settings', 'error');
-    }
-  };
-
   const handleLogout = async () => {
     await logout();
     router.push('/login');
@@ -151,7 +164,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <Loader />
       </div>
     );
@@ -166,13 +179,12 @@ export default function SettingsPage() {
     { icon: QrCode, label: 'QR Codes', href: '/dashboard/qrcodes' },
     { icon: FolderTree, label: 'Folders', href: '/dashboard/folders' },
     { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics' },
-    { icon: User, label: 'Profile', href: '/dashboard/profile' },
     { icon: Settings, label: 'Settings', href: '/dashboard/settings', active: true },
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 page-enter">
-      <div className="flex min-h-screen">
+      <div className="flex h-screen">
         {/* Sidebar */}
         <aside
           className={`hidden flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:flex transition-all duration-300 ${
@@ -206,30 +218,25 @@ export default function SettingsPage() {
               </Link>
             ))}
           </nav>
-          <div className={`border-t border-slate-200 dark:border-slate-800 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+          <div className={`border-t border-slate-200 ${sidebarCollapsed ? 'p-2' : 'p-2'} dark:border-slate-800`}>
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className={`flex items-center rounded-lg text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50 ${
-                sidebarCollapsed ? 'justify-center px-3 py-3' : 'w-full gap-3 px-3 py-2'
+              className={`flex items-center justify-center rounded-lg text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50 ${
+                sidebarCollapsed ? 'px-2 py-2' : 'w-full gap-2 px-2 py-2'
               }`}
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              <PanelLeft className="h-5 w-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span>Collapse</span>}
+              <PanelLeft className="h-4 w-4 flex-shrink-0" />
+              {!sidebarCollapsed && <span className="text-xs">Collapse</span>}
             </button>
           </div>
         </aside>
 
         {/* Main content */}
-        <main className="flex-1">
+        <main className="flex-1 flex flex-col overflow-hidden">
           {/* Top bar */}
-          <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6 dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-slate-50">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Link>
-            </div>
+          <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6 dark:border-slate-800 dark:bg-slate-900 flex-shrink-0">
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Settings</h1>
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -254,11 +261,78 @@ export default function SettingsPage() {
             </div>
           </header>
 
-          <div className="p-6 lg:p-8">
+          <div className="flex-1 overflow-y-auto p-6 lg:p-8">
             <div className="mb-8">
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Settings</h1>
-              <p className="mt-1 text-slate-600 dark:text-slate-400">Manage your account settings and preferences</p>
+              <p className="text-slate-600 dark:text-slate-400">Manage your account settings and preferences</p>
             </div>
+
+            {/* Profile Information */}
+            <Card className="mb-6 dark:border-slate-800 dark:bg-slate-900">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-50">
+                    <User className="h-5 w-5" />
+                    Profile Information
+                  </CardTitle>
+                  {!isEditingProfile && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleStartEdit}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder="Your name"
+                      disabled={!isEditingProfile}
+                      className={!isEditingProfile ? 'bg-slate-50 dark:bg-slate-800' : ''}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      disabled={!isEditingProfile}
+                      className={!isEditingProfile ? 'bg-slate-50 dark:bg-slate-800' : ''}
+                    />
+                  </div>
+                  {profileError && <FieldError>{profileError}</FieldError>}
+                  {isEditingProfile && (
+                    <div className="flex gap-3">
+                      <Button
+                        type="submit"
+                        disabled={profileLoading}
+                      >
+                        {profileLoading ? 'Saving...' : 'Save Profile'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancelEdit}
+                        disabled={profileLoading}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
 
             {/* Password Settings */}
             <Card className="mb-6 dark:border-slate-800 dark:bg-slate-900">
@@ -313,75 +387,6 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Notification Preferences */}
-            <Card className="mb-6 dark:border-slate-800 dark:bg-slate-900">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-50">
-                  <BarChart3 className="h-5 w-5" />
-                  Notification Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">Email Notifications</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Receive email updates about your account</p>
-                  </div>
-                  <button
-                    onClick={() => setEmailNotifications(!emailNotifications)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      emailNotifications ? 'bg-brand-600' : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        emailNotifications ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">Scan Alerts</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Get notified when your QR codes are scanned</p>
-                  </div>
-                  <button
-                    onClick={() => setScanAlerts(!scanAlerts)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      scanAlerts ? 'bg-brand-600' : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        scanAlerts ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">Weekly Reports</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Receive weekly analytics summaries</p>
-                  </div>
-                  <button
-                    onClick={() => setWeeklyReports(!weeklyReports)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      weeklyReports ? 'bg-brand-600' : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        weeklyReports ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <Button onClick={handleSaveNotifications} disabled={notificationsLoading} className="mt-2">
-                  {notificationsLoading ? 'Saving...' : 'Save Notification Preferences'}
-                </Button>
-              </CardContent>
-            </Card>
-
             {/* Appearance Settings */}
             <Card className="mb-6 dark:border-slate-800 dark:bg-slate-900">
               <CardHeader>
@@ -405,60 +410,6 @@ export default function SettingsPage() {
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                         theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Privacy Settings */}
-            <Card className="mb-6 dark:border-slate-800 dark:bg-slate-900">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-50">
-                  <User className="h-5 w-5" />
-                  Privacy Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">Public Profile</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Allow others to see your profile</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setPublicProfile(!publicProfile);
-                      handlePrivacyChange();
-                    }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      publicProfile ? 'bg-brand-600' : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        publicProfile ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">Analytics Sharing</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Share anonymous usage data to improve the service</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setAnalyticsSharing(!analyticsSharing);
-                      handlePrivacyChange();
-                    }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      analyticsSharing ? 'bg-brand-600' : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        analyticsSharing ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
                   </button>

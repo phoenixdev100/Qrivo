@@ -70,7 +70,9 @@ export default function DashboardPage() {
         active: response.items?.filter((qr: any) => qr.status === 'ACTIVE').length || 0,
       });
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load dashboard data:', error);
+      }
     }
   };
 
