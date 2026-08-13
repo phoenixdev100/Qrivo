@@ -43,7 +43,7 @@ export function createApp(): Application {
 
   // Root info
   app.get('/', (_req, res) => {
-    res.json({ success: true, data: { name: 'FreeQR API', version: 'v1', docs: '/api/v1/health' } });
+    res.json({ success: true, data: { name: 'Qrivo API', version: 'v1', docs: '/api/v1/health' } });
   });
 
   app.use(notFoundHandler);

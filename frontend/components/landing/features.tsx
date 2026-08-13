@@ -5,7 +5,7 @@ const features = [
   {
     icon: QrCode,
     title: 'Dynamic tracking URLs',
-    desc: 'Every QR resolves through a short FreeQR link, so you keep control after printing.',
+    desc: 'Every QR resolves through a short Qrivo link, so you keep control after printing.',
   },
   {
     icon: Edit3,
@@ -40,10 +40,10 @@ export function Features() {
       <div className="container-x">
         <div className="mx-auto max-w-2xl text-center">
           <span className="eyebrow mx-auto">Features</span>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-slate-50">
             Everything you need to run QR campaigns
           </h2>
-          <p className="mt-4 text-lg text-slate-600">
+          <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
             A focused, professional toolkit - without the bloat.
           </p>
         </div>
@@ -51,11 +51,11 @@ export function Features() {
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(({ icon: Icon, title, desc }) => (
             <Card key={title} className="p-6 transition-shadow hover:shadow-elevated">
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">
                 <Icon className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{desc}</p>
+              <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-50">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{desc}</p>
             </Card>
           ))}
         </div>

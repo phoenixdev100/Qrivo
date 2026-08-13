@@ -1,4 +1,4 @@
-// FreeQR - Prisma schema
+// Qrivo - Prisma schema
 // Provider: PostgreSQL (Neon). Pooled connection via DATABASE_URL for runtime,
 // direct connection via DIRECT_URL for migrations/CLI.
 

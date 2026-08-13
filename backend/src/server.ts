@@ -17,7 +17,7 @@ async function main(): Promise<void> {
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
-    logger.info(`FreeQR API listening on http://localhost:${env.PORT}`, {
+    logger.info(`Qrivo API listening on http://localhost:${env.PORT}`, {
       env: env.NODE_ENV,
     });
   });

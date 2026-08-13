@@ -12,8 +12,8 @@ export const QR_CODE_LENGTH = 8;
 export const QR_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
 // Auth cookie names.
-export const ACCESS_TOKEN_COOKIE = 'freeqr_access';
-export const REFRESH_TOKEN_COOKIE = 'freeqr_refresh';
+export const ACCESS_TOKEN_COOKIE = 'qrivo_access';
+export const REFRESH_TOKEN_COOKIE = 'qrivo_refresh';
 
 // Window (in ms) used to approximate a unique visitor (same visitorHash within window = same visit).
 export const UNIQUE_VISITOR_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h

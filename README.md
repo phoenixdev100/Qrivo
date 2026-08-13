@@ -1,13 +1,13 @@
-# FreeQR
+# Qrivo
 
 **Dynamic QR Codes. Unlimited Scans.**
 
-FreeQR is a free, web-based dynamic QR code generation and scan analytics platform. Create QR codes for many content types, allow unlimited scans, track scans, and view analytics - all through the web. No app required to scan.
+Qrivo is a free, web-based dynamic QR code generation and scan analytics platform. Create QR codes for many content types, allow unlimited scans, track scans, and view analytics - all through the web. No app required to scan.
 
 This repository is a **modular monolith** with two separate applications:
 
 ```
-freeqr/
+qrivo/
 ├── frontend/   # Next.js + React + TypeScript + Tailwind CSS
 ├── backend/    # Node.js + Express + TypeScript + Prisma + PostgreSQL (Neon)
 ├── docs/       # Architecture, database, API, security, deployment docs

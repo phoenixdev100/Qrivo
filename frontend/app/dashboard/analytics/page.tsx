@@ -15,19 +15,15 @@ import {
   Settings,
   TrendingUp,
   User,
-  Users,
 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { Button } from '@/components/ui/button';
 import { QrivoIcon } from '@/components/ui/qr-icon';
 import { useAuth } from '@/hooks/use-auth';
-import { qrApi } from '@/lib/api/qr';
 
-export default function DashboardPage() {
+export default function AnalyticsPage() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
-  const [qrs, setQrs] = useState<any[]>([]);
-  const [stats, setStats] = useState({ total: 0, scans: 0, active: 0 });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -37,12 +33,6 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [user, loading, router]);
-
-  useEffect(() => {
-    if (user) {
-      loadDashboardData();
-    }
-  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -59,20 +49,6 @@ export default function DashboardPage() {
       document.removeEventListener('click', handleClickOutside);
     };
   }, [userDropdownOpen]);
-
-  const loadDashboardData = async () => {
-    try {
-      const response = await qrApi.list({});
-      setQrs(response.items || []);
-      setStats({
-        total: response.total || 0,
-        scans: 0,
-        active: response.items?.filter((qr: any) => qr.status === 'ACTIVE').length || 0,
-      });
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    }
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -92,10 +68,10 @@ export default function DashboardPage() {
   }
 
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', active: true },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
     { icon: QrCode, label: 'QR Codes', href: '/dashboard/qrcodes' },
     { icon: FolderTree, label: 'Folders', href: '/dashboard/folders' },
-    { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics' },
+    { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics', active: true },
     { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
   ];
 
@@ -154,7 +130,7 @@ export default function DashboardPage() {
           {/* Top bar */}
           <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6 dark:border-slate-800 dark:bg-slate-900 flex-shrink-0">
             <div>
-              <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Dashboard</h1>
+              <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Analytics</h1>
             </div>
             <div className="relative" ref={dropdownRef}>
               <button
@@ -189,10 +165,10 @@ export default function DashboardPage() {
           </header>
 
           <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-            {/* Welcome section */}
+            {/* Header */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Welcome back, {user.name}!</h2>
-              <p className="mt-1 text-slate-600 dark:text-slate-400">Here's what's happening with your QR codes today.</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Scan Analytics</h2>
+              <p className="mt-1 text-slate-600 dark:text-slate-400">Track and analyze your QR code performance.</p>
             </div>
 
             {/* Stats cards */}
@@ -200,19 +176,19 @@ export default function DashboardPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total QR Codes</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{stats.total}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Scans</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">0</p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">
-                    <QrCode className="h-5 w-5" />
+                    <BarChart3 className="h-5 w-5" />
                   </div>
                 </div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Scans</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{stats.scans}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Unique Scans</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">0</p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
                     <TrendingUp className="h-5 w-5" />
@@ -222,18 +198,18 @@ export default function DashboardPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Active QR Codes</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{stats.active}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Active QRs</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">0</p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                    <Users className="h-5 w-5" />
+                    <QrCode className="h-5 w-5" />
                   </div>
                 </div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Folders</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Avg/Day</p>
                     <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">0</p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
@@ -243,109 +219,18 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Quick actions */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Quick Actions</h3>
-              </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Link
-                  href="/dashboard/qrcodes/new"
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card transition-all hover:shadow-elevated hover:border-brand-300 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-brand-600"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">
-                    <Plus className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">Create QR Code</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Generate a new QR</p>
-                  </div>
+            {/* Empty state */}
+            <div className="mt-8 rounded-xl border border-slate-200 bg-white p-12 shadow-card dark:border-slate-700 dark:bg-slate-800">
+              <div className="flex flex-col items-center justify-center text-center">
+                <BarChart3 className="h-12 w-12 text-slate-300 dark:text-slate-600" />
+                <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-50">No analytics data yet</h3>
+                <p className="mt-2 text-slate-500 dark:text-slate-400">Create QR codes and start tracking scans to see analytics here.</p>
+                <Link href="/dashboard/qrcodes/new">
+                  <Button className="mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create your first QR code
+                  </Button>
                 </Link>
-                <Link
-                  href="/dashboard/qrcodes"
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card transition-all hover:shadow-elevated hover:border-brand-300 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-brand-600"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                    <QrCode className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">View All QRs</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Manage your codes</p>
-                  </div>
-                </Link>
-                <Link
-                  href="/dashboard/analytics"
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card transition-all hover:shadow-elevated hover:border-brand-300 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-brand-600"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                    <BarChart3 className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">Analytics</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">View scan data</p>
-                  </div>
-                </Link>
-                <Link
-                  href="/dashboard/folders"
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card transition-all hover:shadow-elevated hover:border-brand-300 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-brand-600"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                    <FolderTree className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-50">Folders</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Organize codes</p>
-                  </div>
-                </Link>
-              </div>
-            </div>
-
-            {/* Recent QR Codes */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Recent QR Codes</h3>
-                <Link href="/dashboard/qrcodes" className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300">
-                  View all →
-                </Link>
-              </div>
-              <div className="mt-4 rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-800">
-                {qrs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-12 text-center">
-                    <QrCode className="h-12 w-12 text-slate-300 dark:text-slate-600" />
-                    <p className="mt-4 text-slate-500 dark:text-slate-400">No QR codes yet</p>
-                    <Link href="/dashboard/qrcodes/new">
-                      <Button className="mt-4">Create your first QR code</Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {qrs.map((qr) => (
-                      <div key={qr.id} className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
-                            <QrCode className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-slate-900 dark:text-slate-50">{qr.name || 'Untitled'}</p>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">{qr.type}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span
-                            className={`rounded-full px-2 py-1 text-xs font-medium ${
-                              qr.status === 'ACTIVE'
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
-                            }`}
-                          >
-                            {qr.status}
-                          </span>
-                          <span className="text-sm text-slate-500 dark:text-slate-400">{qr.scans || 0} scans</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>

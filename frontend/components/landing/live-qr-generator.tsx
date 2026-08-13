@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import QRCode from 'qrcode';
 import { Download, Link2, Mail, Phone, Type, Wifi } from 'lucide-react';
 import { QRPreview } from '@/components/qr/qr-preview';
@@ -18,13 +19,22 @@ const TYPES: { type: QRType; label: string; icon: typeof Link2 }[] = [
   { type: 'WIFI', label: 'WiFi', icon: Wifi },
 ];
 
+const COLORS = [
+  { name: 'Indigo', value: '#4F46E5' },
+  { name: 'Slate', value: '#0F172A' },
+  { name: 'Sky', value: '#0EA5E9' },
+  { name: 'Emerald', value: '#059669' },
+  { name: 'Rose', value: '#E11D48' },
+  { name: 'Amber', value: '#D97706' },
+];
+
 export function LiveQrGenerator() {
   const [type, setType] = useState<QRType>('URL');
-  const [url, setUrl] = useState('https://freeqr.example.com');
-  const [text, setText] = useState('Hello from FreeQR!');
-  const [email, setEmail] = useState('hello@freeqr.dev');
+  const [url, setUrl] = useState('https://qrivo.example.com');
+  const [text, setText] = useState('Hello from Qrivo!');
+  const [email, setEmail] = useState('hello@qrivo.dev');
   const [phone, setPhone] = useState('+1 555 010 0000');
-  const [ssid, setSsid] = useState('FreeQR-Guest');
+  const [ssid, setSsid] = useState('Qrivo-Guest');
   const [wifiPassword, setWifiPassword] = useState('welcome123');
   const [color, setColor] = useState('#4F46E5');
 
@@ -62,13 +72,18 @@ export function LiveQrGenerator() {
     });
     const a = document.createElement('a');
     a.href = dataUrl;
-    a.download = 'freeqr-code.png';
+    a.download = 'qrivo-code.png';
     a.click();
   };
 
   return (
-    <div className="grid gap-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-elevated sm:p-6 md:grid-cols-[1fr_auto]">
+    <div className="grid gap-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-elevated sm:p-6 md:grid-cols-[1fr_auto] dark:border-slate-700 dark:bg-slate-900">
       <div className="space-y-4">
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 dark:bg-amber-900/20 dark:border-amber-800">
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            <strong>Preview Mode:</strong> This generates static QR codes for testing. For dynamic, tracked QR codes with analytics and editability, <Link href="/register" className="underline hover:text-amber-900 dark:hover:text-amber-200">sign up for a free account</Link>.
+          </p>
+        </div>
         <div className="flex flex-wrap gap-2">
           {TYPES.map(({ type: t, label, icon: Icon }) => (
             <button
@@ -78,8 +93,8 @@ export function LiveQrGenerator() {
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
                 type === t
-                  ? 'border-brand-600 bg-brand-50 text-brand-700'
-                  : 'border-slate-200 text-slate-600 hover:bg-slate-50',
+                  ? 'border-brand-600 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-900/30 dark:text-brand-400'
+                  : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800',
               )}
             >
               <Icon className="h-4 w-4" />
@@ -126,30 +141,38 @@ export function LiveQrGenerator() {
             </div>
           )}
 
-          <div className="flex items-center gap-3">
-            <Label htmlFor="lg-color" className="mb-0">
-              Color
-            </Label>
-            <input
-              id="lg-color"
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="h-9 w-12 cursor-pointer rounded border border-slate-300"
-              aria-label="QR foreground color"
-            />
-            <Select value={color} onChange={(e) => setColor(e.target.value)} className="max-w-[160px]">
-              <option value="#4F46E5">Indigo</option>
-              <option value="#0F172A">Slate</option>
-              <option value="#0EA5E9">Sky</option>
-              <option value="#059669">Emerald</option>
-            </Select>
+          <div>
+            <Label htmlFor="lg-color">Color</Label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {COLORS.map(({ name, value }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setColor(value)}
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg border-2 transition-all',
+                    color === value
+                      ? 'border-brand-600 ring-2 ring-brand-600/20'
+                      : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600',
+                  )}
+                  style={{ backgroundColor: value }}
+                  title={name}
+                  aria-label={`Select ${name} color`}
+                >
+                  {color === value && (
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white">
+                      <span className="h-2 w-2 rounded-full bg-current" style={{ color: value }} />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="flex flex-col items-center justify-between gap-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-3">
+        <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
           <QRPreview value={payload} size={200} foreground={color} />
         </div>
         <Button onClick={download} className="w-full" disabled={!payload}>

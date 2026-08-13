@@ -42,21 +42,21 @@ const PIE_COLORS = ['#4F46E5', '#818cf8', '#c7d2fe'];
 
 export function AnalyticsShowcase() {
   return (
-    <section className="section" id="analytics">
+    <section className="section pt-8 sm:pt-2" id="analytics">
       <div className="container-x">
         <div className="mx-auto max-w-2xl text-center">
           <span className="eyebrow mx-auto">Analytics</span>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-slate-50">
             Understand every scan
           </h2>
-          <p className="mt-4 text-lg text-slate-600">
+          <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
             Professional dashboards for scan trends, devices, browsers and locations.
           </p>
         </div>
 
         <div className="mt-12 grid gap-5 lg:grid-cols-3">
           <Card className="p-5 lg:col-span-2">
-            <p className="text-sm font-medium text-slate-500">Scan activity</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Scan activity</p>
             <div className="mt-4 h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={timeline} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
@@ -66,8 +66,8 @@ export function AnalyticsShowcase() {
                       <stop offset="100%" stopColor="#4F46E5" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="d" tickLine={false} axisLine={false} fontSize={12} stroke="#94a3b8" />
+                  <CartesianGrid vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
+                  <XAxis dataKey="d" tickLine={false} axisLine={false} fontSize={12} stroke="#94a3b8" className="dark:stroke-slate-500" />
                   <Tooltip />
                   <Area type="monotone" dataKey="v" stroke="#4F46E5" strokeWidth={2} fill="url(#g)" />
                 </AreaChart>
@@ -76,7 +76,7 @@ export function AnalyticsShowcase() {
           </Card>
 
           <Card className="p-5">
-            <p className="text-sm font-medium text-slate-500">Devices</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Devices</p>
             <div className="mt-4 h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -92,13 +92,13 @@ export function AnalyticsShowcase() {
           </Card>
 
           <Card className="p-5 lg:col-span-3">
-            <p className="text-sm font-medium text-slate-500">Top browsers</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Top browsers</p>
             <div className="mt-4 h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={browsers} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} stroke="#94a3b8" />
-                  <Tooltip cursor={{ fill: '#f1f5f9' }} />
+                  <CartesianGrid vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} stroke="#94a3b8" className="dark:stroke-slate-500" />
+                  <Tooltip cursor={{ fill: 'rgba(51, 65, 85, 0.3)' }} />
                   <Bar dataKey="v" radius={[6, 6, 0, 0]} fill="#4F46E5" />
                 </BarChart>
               </ResponsiveContainer>
@@ -106,7 +106,7 @@ export function AnalyticsShowcase() {
           </Card>
         </div>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
           Unique counts are privacy-conscious estimates, not exact individuals.
         </p>
       </div>

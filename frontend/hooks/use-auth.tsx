@@ -31,18 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Only attempt refresh if we're on a protected route
-    // Skip for homepage and other public pages
-    const isPublicPage = window.location.pathname === '/' || 
-                        window.location.pathname.startsWith('/#') ||
-                        window.location.pathname === '/login' ||
-                        window.location.pathname === '/register';
-    
-    if (!isPublicPage) {
-      void refresh().finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    // Always attempt to refresh user state on mount
+    // This ensures authentication state persists across page refreshes
+    void refresh().finally(() => setLoading(false));
   }, [refresh]);
 
   const login = useCallback(async (email: string, password: string) => {

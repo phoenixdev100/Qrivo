@@ -14,11 +14,11 @@ export function FinalCta() {
             Free forever for normal usage. No credit card, no scan limits, no app required.
           </p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <ButtonLink href="/register" size="lg">
+            <ButtonLink href="/register" size="md">
               Create your free account
               <ArrowRight className="h-4 w-4" />
             </ButtonLink>
-            <ButtonLink href="/login" size="lg" variant="outline" className="border-slate-700 bg-transparent text-white hover:bg-white/10">
+            <ButtonLink href="/login" size="md" variant="outline" className="border-slate-700 bg-transparent text-white hover:bg-white/10">
               Sign in
             </ButtonLink>
           </div>

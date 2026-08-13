@@ -9,16 +9,16 @@ const items = [
 
 export function TrustBar() {
   return (
-    <section className="border-y border-slate-200 bg-slate-50">
+    <section className="border-y border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
       <div className="container-x grid grid-cols-2 gap-6 py-8 sm:py-10 lg:grid-cols-4">
         {items.map(({ icon: Icon, title, desc }) => (
           <div key={title} className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-card">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-card dark:bg-slate-800 dark:text-brand-400">
               <Icon className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-slate-900">{title}</p>
-              <p className="text-sm text-slate-500">{desc}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">{title}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{desc}</p>
             </div>
           </div>
         ))}

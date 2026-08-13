@@ -18,11 +18,11 @@ export function SecuritySection() {
             <ShieldCheck className="h-3.5 w-3.5 text-brand-600" />
             Security
           </span>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-slate-50">
             Built with security and privacy in mind
           </h2>
-          <p className="mt-4 text-lg text-slate-600">
-            FreeQR treats every redirect and scan as untrusted input, validating and protecting
+          <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+            Qrivo treats every redirect and scan as untrusted input, validating and protecting
             data at every layer.
           </p>
         </div>
@@ -31,10 +31,10 @@ export function SecuritySection() {
           {points.map((p) => (
             <li
               key={p}
-              className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card"
+              className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-800 dark:bg-slate-900"
             >
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
-              <span className="text-sm text-slate-700">{p}</span>
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" />
+              <span className="text-sm text-slate-700 dark:text-slate-300">{p}</span>
             </li>
           ))}
         </ul>
