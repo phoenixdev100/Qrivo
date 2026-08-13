@@ -1,30 +1,35 @@
 import { createApp } from './app.js';
-import { env } from './config/env.js';
+import { env, isDev } from './config/env.js';
 import { prisma } from './config/database.js';
-import { logger } from './utils/logger.js';
 
 async function main(): Promise<void> {
   // Verify the database connection early so misconfiguration fails fast.
   try {
     await prisma.$connect();
-    logger.info('Connected to database');
+    if (isDev) {
+      console.log('✅ Connected to database');
+    }
   } catch (err) {
-    logger.error('Failed to connect to database', {
-      message: err instanceof Error ? err.message : String(err),
-    });
+    console.error('❌ Failed to connect to database:', err instanceof Error ? err.message : String(err));
     process.exit(1);
   }
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
-    logger.info(`Qrivo API listening on http://localhost:${env.PORT}`, {
-      env: env.NODE_ENV,
-    });
+    if (isDev) {
+      console.log(`🚀 Qrivo API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
+    }
   });
 
   const shutdown = async (signal: string): Promise<void> => {
-    logger.info(`Received ${signal}, shutting down gracefully`);
-    server.close(() => logger.info('HTTP server closed'));
+    if (isDev) {
+      console.log(`👋 Received ${signal}, shutting down gracefully`);
+    }
+    server.close(() => {
+      if (isDev) {
+        console.log('✅ HTTP server closed');
+      }
+    });
     await prisma.$disconnect();
     process.exit(0);
   };

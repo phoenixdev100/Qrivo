@@ -1,11 +1,14 @@
-import { isTest } from '../config/env.js';
+import { isTest, isProd } from '../config/env.js';
 
 // Minimal structured logger. Avoids leaking sensitive internals in production output.
 
 type Level = 'info' | 'warn' | 'error' | 'debug';
 
 function log(level: Level, message: string, meta?: Record<string, unknown>): void {
+  // Only log errors in production, everything in development, nothing in tests
   if (isTest) return; // keep test output clean
+  if (isProd && level !== 'error') return; // only log errors in production
+
   const entry = {
     ts: new Date().toISOString(),
     level,
