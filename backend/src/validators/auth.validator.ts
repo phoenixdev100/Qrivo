@@ -3,7 +3,11 @@ import { z } from 'zod';
 const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
-  .max(128, 'Password is too long');
+  .max(128, 'Password is too long')
+  .regex(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least 1 lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least 1 number')
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain at least 1 special character');
 
 export const registerSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80),

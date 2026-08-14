@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   useEffect(() => {
     if (!loading && user) {
@@ -25,9 +26,40 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    if (value.length > 128) {
+      setFieldErrors(prev => ({ ...prev, password: 'Password cannot exceed 128 characters' }));
+    } else {
+      setFieldErrors(prev => ({ ...prev, password: undefined }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Frontend validations
+    if (!email.trim()) {
+      setError('Email is required');
+      showToast('Email is required', 'error');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+
+    if (!password.trim()) {
+      setError('Password is required');
+      showToast('Password is required', 'error');
+      return;
+    }
+
     setFormLoading(true);
 
     try {
@@ -81,10 +113,12 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   required
+                  maxLength={128}
                   placeholder="••••••••"
                 />
+                {fieldErrors.password && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.password}</p>}
               </div>
               {error && <FieldError>{error}</FieldError>}
               <Button type="submit" className="w-full" size="md" disabled={formLoading}>

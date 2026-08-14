@@ -140,15 +140,7 @@ export default function AnalyticsPage() {
                 {user.name?.charAt(0).toUpperCase()}
               </button>
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg py-1 dark:border-slate-700 dark:bg-slate-900">
-                  <Link
-                    href="/dashboard/settings"
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
-                    onClick={() => setUserDropdownOpen(false)}
-                  >
-                    <User className="h-4 w-4" />
-                    Profile
-                  </Link>
+                <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg py-1 dark:border-slate-700 dark:bg-slate-900 z-50">
                   <button
                     onClick={() => {
                       handleLogout();

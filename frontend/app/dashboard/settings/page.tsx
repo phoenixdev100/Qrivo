@@ -245,7 +245,7 @@ export default function SettingsPage() {
                 {user.name?.charAt(0).toUpperCase()}
               </button>
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg py-1 dark:border-slate-700 dark:bg-slate-800">
+                <div className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white shadow-lg py-1 dark:border-slate-700 dark:bg-slate-800 z-50">
                   <button
                     onClick={() => {
                       handleLogout();
