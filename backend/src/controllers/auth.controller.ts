@@ -25,6 +25,8 @@ export const authController = {
 
   async refresh(req: Request, res: Response) {
     const token = req.cookies?.[REFRESH_TOKEN_COOKIE] as string | undefined;
+    console.log('Refresh request cookies:', req.cookies);
+    console.log('Refresh token found:', !!token);
     if (!token) throw ApiError.unauthorized('No refresh token');
     const tokens = await authService.refresh(token);
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
