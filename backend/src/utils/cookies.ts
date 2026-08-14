@@ -11,9 +11,6 @@ function baseOptions(): CookieOptions {
     secure: env.COOKIE_SECURE || isProd,
     sameSite: isProd ? 'none' : 'lax',
     path: '/',
-    // In production on Vercel, set domain to allow cross-subdomain cookies
-    ...(isProd && !env.COOKIE_DOMAIN ? { domain: '.vercel.app' } : {}),
-    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
   };
 }
 
