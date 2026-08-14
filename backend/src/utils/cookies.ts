@@ -9,8 +9,10 @@ function baseOptions(): CookieOptions {
   return {
     httpOnly: true,
     secure: env.COOKIE_SECURE || isProd,
-    sameSite: 'lax',
+    sameSite: isProd ? 'none' : 'lax',
     path: '/',
+    // In production on Vercel, set domain to allow cross-subdomain cookies
+    ...(isProd && !env.COOKIE_DOMAIN ? { domain: '.vercel.app' } : {}),
     ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
   };
 }
