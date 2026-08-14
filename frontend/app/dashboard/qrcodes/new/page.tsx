@@ -78,13 +78,13 @@ export default function NewQRCodePage() {
   const [expiresAt, setExpiresAt] = useState('');
   
   // Customization state
-  const [foregroundColor, setForegroundColor] = useState('#4F46E5');
+  const [foregroundColor, setForegroundColor] = useState('#000000');
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
   const [qrPreview, setQrPreview] = useState<string>('');
 
   const COLORS = [
+    { name: 'Black', value: '#000000' },
     { name: 'Indigo', value: '#4F46E5' },
-    { name: 'Slate', value: '#0F172A' },
     { name: 'Sky', value: '#0EA5E9' },
     { name: 'Emerald', value: '#059669' },
     { name: 'Rose', value: '#E11D48' },

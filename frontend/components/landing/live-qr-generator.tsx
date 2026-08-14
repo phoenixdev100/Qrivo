@@ -7,6 +7,7 @@ import { Download, Link2, Mail, Phone, Type, Wifi } from 'lucide-react';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
+import { Dropdown } from '@/components/ui/dropdown';
 import { encodePayload } from '@/lib/utils/qr-payload';
 import type { QRContentInput, QRType } from '@/types/qr';
 import { cn } from '@/lib/utils/cn';
@@ -20,8 +21,8 @@ const TYPES: { type: QRType; label: string; icon: typeof Link2 }[] = [
 ];
 
 const COLORS = [
+  { name: 'Black', value: '#000000' },
   { name: 'Indigo', value: '#4F46E5' },
-  { name: 'Slate', value: '#0F172A' },
   { name: 'Sky', value: '#0EA5E9' },
   { name: 'Emerald', value: '#059669' },
   { name: 'Rose', value: '#E11D48' },
@@ -36,7 +37,8 @@ export function LiveQrGenerator() {
   const [phone, setPhone] = useState('+1 555 010 0000');
   const [ssid, setSsid] = useState('Qrivo-Guest');
   const [wifiPassword, setWifiPassword] = useState('welcome123');
-  const [color, setColor] = useState('#4F46E5');
+  const [color, setColor] = useState('#000000');
+  const [downloadFormat, setDownloadFormat] = useState<'png' | 'svg' | 'jpeg' | 'webp' | 'bmp'>('png');
 
   const content = useMemo<QRContentInput>(() => {
     switch (type) {
@@ -65,15 +67,51 @@ export function LiveQrGenerator() {
 
   const download = async () => {
     if (!payload) return;
-    const dataUrl = await QRCode.toDataURL(payload, {
+
+    const options = {
       width: 1024,
       margin: 2,
       color: { dark: color, light: '#FFFFFF' },
-    });
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = 'qrivo-code.png';
-    a.click();
+    };
+
+    if (downloadFormat === 'svg') {
+      const svgString = await QRCode.toString(payload, {
+        ...options,
+        type: 'svg',
+      });
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'qrivo-code.svg';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } else {
+      // For PNG, JPEG, WebP, BMP - use canvas conversion
+      const dataUrl = await QRCode.toDataURL(payload, options);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const mimeType = downloadFormat === 'jpeg' ? 'image/jpeg' : downloadFormat === 'webp' ? 'image/webp' : downloadFormat === 'bmp' ? 'image/bmp' : 'image/png';
+          const extension = downloadFormat === 'jpeg' ? 'jpg' : downloadFormat;
+          const url = canvas.toDataURL(mimeType, 0.92);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `qrivo-code.${extension}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      };
+      img.src = dataUrl;
+    }
   };
 
   return (
@@ -175,10 +213,24 @@ export function LiveQrGenerator() {
         <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
           <QRPreview value={payload} size={200} foreground={color} />
         </div>
-        <Button onClick={download} className="w-full" disabled={!payload}>
-          <Download className="h-4 w-4" />
-          Download PNG
-        </Button>
+        <div className="flex gap-2 w-full">
+          <Dropdown
+            value={downloadFormat}
+            onChange={(value) => setDownloadFormat(value as 'png' | 'svg' | 'jpeg' | 'webp' | 'bmp')}
+            options={[
+              { value: 'png', label: 'PNG' },
+              { value: 'jpeg', label: 'JPG' },
+              { value: 'webp', label: 'WebP' },
+              { value: 'bmp', label: 'BMP' },
+              { value: 'svg', label: 'SVG' },
+            ]}
+            className="w-20"
+          />
+          <Button onClick={download} className="flex-1" disabled={!payload}>
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
+        </div>
       </div>
     </div>
   );
