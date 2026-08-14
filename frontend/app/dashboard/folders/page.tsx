@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   BarChart3,
   ChevronDown,
+  Folder,
   FolderTree,
   LayoutDashboard,
   LogOut,
@@ -14,11 +15,19 @@ import {
   QrCode,
   Settings,
   User,
+  X,
+  PlusCircle,
+  MoreVertical,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { Button } from '@/components/ui/button';
 import { QrivoIcon } from '@/components/ui/qr-icon';
+import { Dropdown } from '@/components/ui/dropdown';
 import { useAuth } from '@/hooks/use-auth';
+import { foldersApi } from '@/lib/api/folders';
+import { qrApi } from '@/lib/api/qr';
 
 export default function FoldersPage() {
   const router = useRouter();
@@ -26,6 +35,25 @@ export default function FoldersPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [folders, setFolders] = useState<any[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAddQrModalOpen, setIsAddQrModalOpen] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<any>(null);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [isAddingQr, setIsAddingQr] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [availableQrCodes, setAvailableQrCodes] = useState<any[]>([]);
+  const [selectedQrCodes, setSelectedQrCodes] = useState<string[]>([]);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [folderToRename, setFolderToRename] = useState<any>(null);
+  const [renameFolderName, setRenameFolderName] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<any>(null);
+  const folderMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,27 +62,135 @@ export default function FoldersPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
+    const loadFolders = async () => {
+      if (!user) return;
+      try {
+        const response = await foldersApi.list();
+        setFolders(response.folders || []);
+      } catch (error) {
+        console.error('Failed to load folders:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadFolders();
+  }, [user]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
       }
+      if (folderMenuRef.current && !folderMenuRef.current.contains(event.target as Node)) {
+        setFolderMenuOpen(null);
+      }
     };
 
-    if (userDropdownOpen) {
+    if (userDropdownOpen || folderMenuOpen) {
       document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [userDropdownOpen]);
+  }, [userDropdownOpen, folderMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
     router.push('/login');
   };
 
-  if (loading) {
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return;
+    setIsCreating(true);
+    try {
+      const response = await foldersApi.create(newFolderName);
+      setFolders([...folders, response.folder]);
+      setNewFolderName('');
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error('Failed to create folder:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleOpenCreateModal = () => {
+    setNewFolderName('');
+    setIsCreateModalOpen(true);
+  };
+
+  const handleOpenAddQrModal = async (folder: any) => {
+    setSelectedFolder(folder);
+    setIsAddQrModalOpen(true);
+    try {
+      const response = await qrApi.list();
+      // Filter to only show QR codes not in any folder
+      setAvailableQrCodes((response.items || []).filter(qr => !qr.folderId));
+    } catch (error) {
+      console.error('Failed to load QR codes:', error);
+    }
+  };
+
+  const handleAddQrToFolder = async () => {
+    if (!selectedFolder || selectedQrCodes.length === 0) return;
+    setIsAddingQr(true);
+    try {
+      await Promise.all(
+        selectedQrCodes.map(qrId => qrApi.update(qrId, { folderId: selectedFolder.id }))
+      );
+      // Refresh folders to update QR counts
+      const response = await foldersApi.list();
+      setFolders(response.folders || []);
+      // Also reload available QR codes to remove the ones that were added
+      const qrResponse = await qrApi.list();
+      // Filter to only show QR codes not in any folder
+      setAvailableQrCodes((qrResponse.items || []).filter(qr => !qr.folderId));
+      setSelectedQrCodes([]);
+      setIsAddQrModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add QR codes to folder:', error);
+    } finally {
+      setIsAddingQr(false);
+    }
+  };
+
+  const handleRenameFolder = async () => {
+    if (!folderToRename || !renameFolderName.trim()) return;
+    setIsRenaming(true);
+    try {
+      await foldersApi.update(folderToRename.id, renameFolderName);
+      // Refresh folders
+      const response = await foldersApi.list();
+      setFolders(response.folders || []);
+      setRenameFolderName('');
+      setFolderToRename(null);
+      setIsRenameModalOpen(false);
+    } catch (error) {
+      console.error('Failed to rename folder:', error);
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    setIsDeleting(true);
+    try {
+      await foldersApi.remove(folderId);
+      // Refresh folders
+      const response = await foldersApi.list();
+      setFolders(response.folders || []);
+      setIsDeleteModalOpen(false);
+      setFolderToDelete(null);
+      setFolderMenuOpen(null);
+    } catch (error) {
+      console.error('Failed to delete folder:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <Loader />
@@ -162,24 +298,293 @@ export default function FoldersPage() {
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Your Folders</h2>
                 <p className="mt-1 text-slate-600 dark:text-slate-400">Organize your QR codes into folders.</p>
               </div>
-              <Button>
+              <Button size="sm" onClick={handleOpenCreateModal}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Folder
               </Button>
             </div>
 
-            {/* Empty state */}
-            <div className="rounded-xl border border-slate-200 bg-white p-12 shadow-card dark:border-slate-700 dark:bg-slate-800">
-              <div className="flex flex-col items-center justify-center text-center">
-                <FolderTree className="h-12 w-12 text-slate-300 dark:text-slate-600" />
-                <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-50">No folders yet</h3>
-                <p className="mt-2 text-slate-500 dark:text-slate-400">Create folders to organize your QR codes by campaign or category.</p>
-                <Button className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create your first folder
-                </Button>
+            {/* Folders list */}
+            {folders.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {folders.map((folder) => (
+                  <div
+                    key={folder.id}
+                    className="rounded-xl border border-slate-200 bg-white p-4 shadow-card hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                    onClick={() => router.push(`/dashboard/folders/${folder.id}`)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">
+                          <Folder className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-sm text-slate-900 dark:text-slate-50">{folder.name}</h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{folder.qrCodeCount || 0} QR codes</p>
+                        </div>
+                      </div>
+                      <div className="relative" ref={folderMenuRef}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFolderMenuOpen(folderMenuOpen === folder.id ? null : folder.id);
+                          }}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                        {folderMenuOpen === folder.id && (
+                          <div className="absolute right-0 mt-2 w-auto min-w-[120px] rounded-lg border border-slate-200 bg-white shadow-lg py-1 dark:border-slate-700 dark:bg-slate-900 z-50">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFolderToRename(folder);
+                                setRenameFolderName(folder.name);
+                                setIsRenameModalOpen(true);
+                                setFolderMenuOpen(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Rename
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenAddQrModal(folder);
+                                setFolderMenuOpen(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
+                            >
+                              <PlusCircle className="h-4 w-4" />
+                              Add QRs
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFolderToDelete(folder);
+                                setIsDeleteModalOpen(true);
+                                setFolderMenuOpen(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors dark:text-red-400 dark:hover:bg-red-900/30"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              /* Empty state */
+              <div className="rounded-xl border border-slate-200 bg-white p-12 shadow-card dark:border-slate-700 dark:bg-slate-800">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <Folder className="h-12 w-12 text-slate-300 dark:text-slate-600" />
+                  <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-50">No folders yet</h3>
+                  <p className="mt-2 text-slate-500 dark:text-slate-400">Create folders to organize your QR codes by campaign or category.</p>
+                  <Button size="sm" className="mt-4" onClick={handleOpenCreateModal}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create your first folder
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Add QR to folder modal */}
+            {isAddQrModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                      Add QR Codes to {selectedFolder?.name}
+                    </h3>
+                    <button
+                      onClick={() => setIsAddQrModalOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {availableQrCodes.length > 0 ? (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                          Select QR Codes
+                        </label>
+                        <Dropdown
+                          value={selectedQrCodes.join(',')}
+                          onChange={(value) => setSelectedQrCodes(value.split(','))}
+                          options={availableQrCodes.map(qr => ({ value: qr.id, label: qr.name }))}
+                          placeholder="Select QR codes to add"
+                          multiple
+                          className="w-full"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-slate-500 dark:text-slate-400 text-center py-4">
+                        No QR codes available to add
+                      </p>
+                    )}
+                    <div className="flex gap-3 justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsAddQrModalOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddQrToFolder} disabled={selectedQrCodes.length === 0 || isAddingQr}>
+                        {isAddingQr ? (
+                          <>
+                            <Loader className="h-4 w-4 mr-2 animate-spin" />
+                            Adding...
+                          </>
+                        ) : (
+                          `Add Selected (${selectedQrCodes.length})`
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Delete folder modal */}
+            {isDeleteModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Delete Folder</h3>
+                    <button
+                      onClick={() => setIsDeleteModalOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                      Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-slate-50">{folderToDelete?.name}</span>? QR codes in this folder will not be deleted.
+                    </p>
+                    <div className="flex gap-3 justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsDeleteModalOpen(false)}
+                        disabled={isDeleting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteFolder(folderToDelete.id)}
+                        disabled={isDeleting}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        {isDeleting ? (
+                          <>
+                            <Loader className="h-4 w-4 mr-2 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          'Delete'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Rename folder modal */}
+            {isRenameModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Rename Folder</h3>
+                    <button
+                      onClick={() => setIsRenameModalOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Folder Name
+                      </label>
+                      <input
+                        type="text"
+                        value={renameFolderName}
+                        onChange={(e) => setRenameFolderName(e.target.value)}
+                        placeholder="Enter folder name"
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50"
+                        onKeyPress={(e) => e.key === 'Enter' && handleRenameFolder()}
+                      />
+                    </div>
+                    <div className="flex gap-3 justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsRenameModalOpen(false)}
+                        disabled={isRenaming}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleRenameFolder} disabled={isRenaming || !renameFolderName.trim()}>
+                        {isRenaming ? 'Renaming...' : 'Rename'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Create folder modal */}
+            {isCreateModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Create New Folder</h3>
+                    <button
+                      onClick={() => setIsCreateModalOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Folder Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        placeholder="Enter folder name"
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50"
+                        onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
+                      />
+                    </div>
+                    <div className="flex gap-3 justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsCreateModalOpen(false)}
+                        disabled={isCreating}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleCreateFolder} disabled={isCreating || !newFolderName.trim()}>
+                        {isCreating ? 'Creating...' : 'Create Folder'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>

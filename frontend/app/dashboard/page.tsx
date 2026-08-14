@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { QrivoIcon } from '@/components/ui/qr-icon';
 import { useAuth } from '@/hooks/use-auth';
 import { qrApi } from '@/lib/api/qr';
+import { analyticsApi } from '@/lib/api/analytics';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ total: 0, scans: 0, active: 0 });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [isLoadingQrs, setIsLoadingQrs] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,18 +63,38 @@ export default function DashboardPage() {
   }, [userDropdownOpen]);
 
   const loadDashboardData = async () => {
+    setIsLoadingQrs(true);
     try {
-      const response = await qrApi.list({});
-      setQrs(response.items || []);
+      const [qrResponse, analyticsResponse] = await Promise.all([
+        qrApi.list({}),
+        analyticsApi.overview(),
+      ]);
+      const qrItems = qrResponse.items || [];
+      
+      // Fetch individual analytics for each QR to get scan counts
+      const qrWithScans = await Promise.all(
+        qrItems.map(async (qr: any) => {
+          try {
+            const summary = await analyticsApi.summary(qr.id);
+            return { ...qr, scans: summary.totalScans || 0 };
+          } catch (error) {
+            return { ...qr, scans: 0 };
+          }
+        })
+      );
+      
+      setQrs(qrWithScans);
       setStats({
-        total: response.total || 0,
-        scans: 0,
-        active: response.items?.filter((qr: any) => qr.status === 'ACTIVE').length || 0,
+        total: qrResponse.total || 0,
+        scans: analyticsResponse.totalScans || 0,
+        active: qrItems.filter((qr: any) => qr.status === 'ACTIVE').length || 0,
       });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Failed to load dashboard data:', error);
       }
+    } finally {
+      setIsLoadingQrs(false);
     }
   };
 
@@ -303,7 +325,11 @@ export default function DashboardPage() {
                 </Link>
               </div>
               <div className="mt-4 rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-800">
-                {qrs.length === 0 ? (
+                {isLoadingQrs ? (
+                  <div className="flex items-center justify-center p-12">
+                    <Loader />
+                  </div>
+                ) : qrs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-12 text-center">
                     <QrCode className="h-12 w-12 text-slate-300 dark:text-slate-600" />
                     <p className="mt-4 text-slate-500 dark:text-slate-400">No QR codes yet</p>
@@ -312,9 +338,16 @@ export default function DashboardPage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {qrs.map((qr) => (
-                      <div key={qr.id} className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700">
+                  <div className="flex flex-col gap-1">
+                    {qrs.map((qr, index) => (
+                      <div 
+                        key={qr.id} 
+                        className={`flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
+                          index === 0 ? 'rounded-t-xl' : ''
+                        } ${
+                          index === qrs.length - 1 ? 'rounded-b-xl' : ''
+                        }`}
+                      >
                         <div className="flex items-center gap-4">
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
                             <QrCode className="h-5 w-5 text-slate-600 dark:text-slate-400" />

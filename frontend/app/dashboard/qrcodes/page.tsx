@@ -8,17 +8,18 @@ import {
   BarChart3,
   ChevronDown,
   Download,
+  Edit,
   Eye,
   FolderTree,
   LayoutDashboard,
   LogOut,
+  MoreVertical,
   PanelLeft,
   Plus,
+  Power,
   QrCode,
-  RefreshCw,
   Settings,
   Trash2,
-  User,
   X,
 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
@@ -26,14 +27,13 @@ import { Button } from '@/components/ui/button';
 import { QrivoIcon } from '@/components/ui/qr-icon';
 import { Dropdown } from '@/components/ui/dropdown';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
 import { qrApi } from '@/lib/api/qr';
+import { analyticsApi } from '@/lib/api/analytics';
 import { encodePayload } from '@/lib/utils/qr-payload';
 
 export default function QrCodesPage() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
-  const { showToast } = useToast();
   const [qrs, setQrs] = useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -43,7 +43,14 @@ export default function QrCodesPage() {
   const [qrToView, setQrToView] = useState<any>(null);
   const [qrImageData, setQrImageData] = useState<string>('');
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'svg' | 'jpeg' | 'webp' | 'bmp'>('png');
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingQrs, setIsLoadingQrs] = useState(true);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [qrToRename, setQrToRename] = useState<any>(null);
+  const [renameQrName, setRenameQrName] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [isDisabling, setIsDisabling] = useState<string | null>(null);
+  const [qrMenuOpen, setQrMenuOpen] = useState<string | null>(null);
+  const qrMenuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,30 +70,45 @@ export default function QrCodesPage() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
       }
+      if (qrMenuRef.current && !qrMenuRef.current.contains(event.target as Node)) {
+        setQrMenuOpen(null);
+      }
     };
 
-    if (userDropdownOpen) {
+    if (userDropdownOpen || qrMenuOpen) {
       document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [userDropdownOpen]);
+  }, [userDropdownOpen, qrMenuOpen]);
 
   const loadQrCodes = async () => {
-    setIsRefreshing(true);
+    setIsLoadingQrs(true);
     try {
       const response = await qrApi.list({});
-      setQrs(response.items || []);
-      showToast('Refreshed', 'success');
+      const qrItems = response.items || [];
+      
+      // Fetch individual analytics for each QR to get scan counts
+      const qrWithScans = await Promise.all(
+        qrItems.map(async (qr: any) => {
+          try {
+            const summary = await analyticsApi.summary(qr.id);
+            return { ...qr, scans: summary.totalScans || 0 };
+          } catch (error) {
+            return { ...qr, scans: 0 };
+          }
+        })
+      );
+      
+      setQrs(qrWithScans);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Failed to load QR codes:', error);
       }
-      showToast('Failed to refresh', 'error');
     } finally {
-      setIsRefreshing(false);
+      setIsLoadingQrs(false);
     }
   };
 
@@ -106,6 +128,45 @@ export default function QrCodesPage() {
       if (process.env.NODE_ENV === 'development') {
         console.error('Failed to delete QR code:', error);
       }
+    }
+  };
+
+  const handleRenameQr = async () => {
+    if (!qrToRename || !renameQrName.trim()) return;
+    setIsRenaming(true);
+    try {
+      await qrApi.update(qrToRename.id, { name: renameQrName });
+      // Reload QR codes
+      loadQrCodes();
+      setRenameQrName('');
+      setQrToRename(null);
+      setIsRenameModalOpen(false);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to rename QR code:', error);
+      }
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
+  const handleToggleDisable = async (qrId: string, currentStatus: string) => {
+    setIsDisabling(qrId);
+    try {
+      if (currentStatus === 'ACTIVE') {
+        await qrApi.disable(qrId);
+      } else {
+        await qrApi.enable(qrId);
+      }
+      // Reload QR codes
+      loadQrCodes();
+      setQrMenuOpen(null);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to toggle QR code status:', error);
+      }
+    } finally {
+      setIsDisabling(null);
     }
   };
 
@@ -147,8 +208,6 @@ export default function QrCodesPage() {
     setViewModalOpen(false);
     setQrToView(null);
     setQrImageData('');
-    // Refresh QR codes to get updated scan counts
-    await loadQrCodes();
   };
 
   const handleDownload = async () => {
@@ -320,9 +379,6 @@ export default function QrCodesPage() {
                 <p className="mt-1 text-slate-600 dark:text-slate-400">Manage and track all your QR codes.</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={loadQrCodes} size="sm" className="p-2" disabled={isRefreshing}>
-                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
                 <Link href="/dashboard/qrcodes/new">
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />
@@ -334,7 +390,11 @@ export default function QrCodesPage() {
 
             {/* QR codes list */}
             <div className="rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-800">
-              {qrs.length === 0 ? (
+              {isLoadingQrs ? (
+                <div className="flex items-center justify-center p-12">
+                  <Loader />
+                </div>
+              ) : qrs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center">
                   <QrCode className="h-12 w-12 text-slate-300 dark:text-slate-600" />
                   <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-50">No QR codes yet</h3>
@@ -377,20 +437,70 @@ export default function QrCodesPage() {
                           {qr.status}
                         </span>
                         <span className="text-sm text-slate-500 dark:text-slate-400">{qr.scans || 0} scans</span>
-                        <button
-                          onClick={() => handleView(qr)}
-                          className="p-2 text-slate-400 hover:text-brand-600 transition-colors dark:text-slate-500 dark:hover:text-brand-400"
-                          title="View QR code"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(qr.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 transition-colors dark:text-slate-500 dark:hover:text-red-400"
-                          title="Delete QR code"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="relative" ref={qrMenuRef}>
+                          <button
+                            onClick={() => setQrMenuOpen(qrMenuOpen === qr.id ? null : qr.id)}
+                            className="p-2 text-slate-400 hover:text-slate-600 transition-colors dark:text-slate-500 dark:hover:text-slate-300"
+                            title="More options"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                          {qrMenuOpen === qr.id && (
+                            <div className="absolute right-0 mt-2 w-auto min-w-[120px] rounded-lg border border-slate-200 bg-white shadow-lg py-1 dark:border-slate-700 dark:bg-slate-900 z-50">
+                              <button
+                                onClick={() => {
+                                  handleView(qr);
+                                  setQrMenuOpen(null);
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
+                              >
+                                <Eye className="h-4 w-4" />
+                                View
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setQrToRename(qr);
+                                  setRenameQrName(qr.name);
+                                  setIsRenameModalOpen(true);
+                                  setQrMenuOpen(null);
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
+                              >
+                                <Edit className="h-4 w-4" />
+                                Rename
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleToggleDisable(qr.id, qr.status);
+                                }}
+                                disabled={isDisabling === qr.id}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isDisabling === qr.id ? (
+                                  <>
+                                    <Loader className="h-4 w-4 animate-spin" />
+                                    {qr.status === 'ACTIVE' ? 'Disabling...' : 'Enabling...'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Power className="h-4 w-4" />
+                                    {qr.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleDelete(qr.id);
+                                  setQrMenuOpen(null);
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors dark:text-red-400 dark:hover:bg-red-900/30"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -423,6 +533,51 @@ export default function QrCodesPage() {
               >
                 Delete
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename QR modal */}
+      {isRenameModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Rename QR Code</h3>
+              <button
+                onClick={() => setIsRenameModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  QR Code Name
+                </label>
+                <input
+                  type="text"
+                  value={renameQrName}
+                  onChange={(e) => setRenameQrName(e.target.value)}
+                  placeholder="Enter QR code name"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50"
+                  onKeyPress={(e) => e.key === 'Enter' && handleRenameQr()}
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsRenameModalOpen(false)}
+                  disabled={isRenaming}
+                  className="dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleRenameQr} disabled={isRenaming || !renameQrName.trim()}>
+                  {isRenaming ? 'Renaming...' : 'Rename'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
