@@ -15,27 +15,37 @@ async function main(): Promise<void> {
   }
 
   const app = createApp();
-  const server = app.listen(env.PORT, () => {
-    if (isDev) {
-      console.log(`🚀 Qrivo API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
-    }
-  });
 
-  const shutdown = async (signal: string): Promise<void> => {
-    if (isDev) {
-      console.log(`👋 Received ${signal}, shutting down gracefully`);
-    }
-    server.close(() => {
+  // Only start the server in development or when not running in Vercel
+  if (isDev || process.env.VERCEL !== '1') {
+    const server = app.listen(env.PORT, () => {
       if (isDev) {
-        console.log('✅ HTTP server closed');
+        console.log(`🚀 Qrivo API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
       }
     });
-    await prisma.$disconnect();
-    process.exit(0);
-  };
 
-  process.on('SIGINT', () => void shutdown('SIGINT'));
-  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+    const shutdown = async (signal: string): Promise<void> => {
+      if (isDev) {
+        console.log(`👋 Received ${signal}, shutting down gracefully`);
+      }
+      server.close(() => {
+        if (isDev) {
+          console.log('✅ HTTP server closed');
+        }
+      });
+      await prisma.$disconnect();
+      process.exit(0);
+    };
+
+    process.on('SIGINT', () => void shutdown('SIGINT'));
+    process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  } else {
+    // In Vercel, export the app for serverless function
+    // This is handled by the api/index.ts file
+  }
 }
+
+// Export the app for Vercel serverless function
+export { createApp };
 
 void main();
