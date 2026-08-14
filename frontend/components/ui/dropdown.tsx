@@ -19,7 +19,9 @@ interface DropdownProps {
 
 export function Dropdown({ value, onChange, options, placeholder = 'Select...', className }: DropdownProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [dropUp, setDropUp] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
@@ -39,9 +41,25 @@ export function Dropdown({ value, onChange, options, placeholder = 'Select...', 
     };
   }, [isOpen]);
 
+  React.useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const dropdownHeight = 240; // Approximate max height with options
+
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        setDropUp(true);
+      } else {
+        setDropUp(false);
+      }
+    }
+  }, [isOpen]);
+
   return (
     <div ref={dropdownRef} className={cn('relative', className)}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-brand-500 dark:focus:ring-brand-500/30"
@@ -61,7 +79,10 @@ export function Dropdown({ value, onChange, options, placeholder = 'Select...', 
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div className={cn(
+          'absolute z-[9999] w-full rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900',
+          dropUp ? 'bottom-full mb-1' : 'mt-1'
+        )}>
           <div className="max-h-60 overflow-y-auto py-1">
             {options.map((option) => (
               <button
