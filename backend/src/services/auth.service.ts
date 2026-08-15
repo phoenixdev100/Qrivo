@@ -1,4 +1,5 @@
 import { userRepository } from '../repositories/user.repository.js';
+import { refreshTokenRepository } from '../repositories/refresh-token.repository.js';
 import { hashPassword, verifyPassword } from '../utils/hash.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/tokens.js';
 import { ApiError } from '../utils/api-error.js';
@@ -36,11 +37,22 @@ function toPublicUser(u: {
   };
 }
 
-function issueTokens(user: { id: string; role: 'USER' | 'ADMIN'; email: string }): AuthTokens {
-  return {
-    accessToken: signAccessToken({ sub: user.id, role: user.role, email: user.email }),
-    refreshToken: signRefreshToken(user.id),
-  };
+async function issueTokens(user: { id: string; role: 'USER' | 'ADMIN'; email: string }): Promise<AuthTokens> {
+  const accessToken = signAccessToken({ sub: user.id, role: user.role, email: user.email });
+  const refreshToken = signRefreshToken(user.id);
+  
+  // Calculate expiration date for refresh token (7 days from now)
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+  
+  // Store refresh token in database
+  await refreshTokenRepository.create({
+    user: { connect: { id: user.id } },
+    token: refreshToken,
+    expiresAt,
+  });
+  
+  return { accessToken, refreshToken };
 }
 
 export const authService = {
@@ -55,7 +67,8 @@ export const authService = {
       email: input.email,
       passwordHash,
     });
-    return { user: toPublicUser(user), tokens: issueTokens(user) };
+    const tokens = await issueTokens(user);
+    return { user: toPublicUser(user), tokens };
   },
 
   async login(input: LoginInput): Promise<{ user: PublicUser; tokens: AuthTokens }> {
@@ -68,20 +81,39 @@ export const authService = {
     if (!valid) {
       throw ApiError.unauthorized('Invalid email or password');
     }
-    return { user: toPublicUser(user), tokens: issueTokens(user) };
+    const tokens = await issueTokens(user);
+    return { user: toPublicUser(user), tokens };
   },
 
   async refresh(refreshToken: string): Promise<AuthTokens> {
+    // Verify JWT signature first
     let payload;
     try {
       payload = verifyRefreshToken(refreshToken);
     } catch {
       throw ApiError.unauthorized('Invalid or expired session');
     }
+    
+    // Check if token exists in database and is not revoked
+    const storedToken = await refreshTokenRepository.findByToken(refreshToken);
+    if (!storedToken || storedToken.revoked) {
+      throw ApiError.unauthorized('Invalid or expired session');
+    }
+    
+    // Check if token is expired
+    if (storedToken.expiresAt < new Date()) {
+      throw ApiError.unauthorized('Invalid or expired session');
+    }
+    
     const user = await userRepository.findById(payload.sub);
     if (!user) {
       throw ApiError.unauthorized('Invalid session');
     }
+    
+    // Revoke old refresh token (token rotation)
+    await refreshTokenRepository.revoke(refreshToken);
+    
+    // Issue new tokens
     return issueTokens(user);
   },
 

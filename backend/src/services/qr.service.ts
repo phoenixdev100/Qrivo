@@ -70,7 +70,7 @@ async function generateUniqueCode(): Promise<string> {
 }
 
 export function buildTrackingUrl(code: string): string {
-  return `${env.PUBLIC_BASE_URL}${SCAN_PATH_PREFIX}/${code}`;
+  return `${env.FRONTEND_URL}${SCAN_PATH_PREFIX}/${code}`;
 }
 
 async function assertFolderOwned(userId: string, folderId?: string | null): Promise<void> {

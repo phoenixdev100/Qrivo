@@ -113,7 +113,6 @@ cp .env.example .env.local
 Configure your `.env.local` file:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
-NEXT_PUBLIC_SCAN_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
@@ -134,9 +133,8 @@ Frontend will be available at `http://localhost:3000`
 | `JWT_REFRESH_SECRET` | Secret for refresh tokens (min 16 chars) | Yes | - |
 | `JWT_ACCESS_EXPIRES_IN` | Access token expiration | No | `15m` |
 | `JWT_REFRESH_EXPIRES_IN` | Refresh token expiration | No | `7d` |
-| `FRONTEND_URL` | Frontend URL for CORS | No | `http://localhost:3000` |
+| `FRONTEND_URL` | Frontend URL for CORS and QR scan tracking links | No | `http://localhost:3000` |
 | `CORS_ORIGIN` | CORS allowed origins (comma-separated) | No | `http://localhost:3000` |
-| `PUBLIC_BASE_URL` | Base URL for QR scan tracking links | No | `http://localhost:3000` |
 | `PORT` | Backend server port | No | `5000` |
 | `COOKIE_SECURE` | Use secure cookies (HTTPS) | No | `false` |
 | `COOKIE_DOMAIN` | Cookie domain | No | - |
@@ -145,8 +143,7 @@ Frontend will be available at `http://localhost:3000`
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `NEXT_PUBLIC_API_URL` | Backend API URL | Yes | - |
-| `NEXT_PUBLIC_SCAN_BASE_URL` | Base URL for scan tracking | Yes | - |
-| `NEXT_PUBLIC_SITE_URL` | Public site URL | No | `http://localhost:3000` |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL (used for SEO metadata and scan tracking links) | No | `http://localhost:3000` |
 
 ## 📦 Available Scripts
 

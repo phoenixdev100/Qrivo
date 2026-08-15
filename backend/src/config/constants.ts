@@ -2,7 +2,7 @@
 
 export const API_PREFIX = '/api/v1';
 
-// Public QR resolution path: {PUBLIC_BASE_URL}/q/{code}
+// Public QR resolution path: {FRONTEND_URL}/q/{code}
 export const SCAN_PATH_PREFIX = '/q';
 
 // Length of the generated short code embedded in tracking URLs.

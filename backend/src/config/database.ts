@@ -8,6 +8,12 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: isProd ? ['error'] : ['error', 'warn'],
+    // Connection pooling for better performance
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 
 if (!isProd) {

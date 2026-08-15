@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { authService } from '../services/auth.service.js';
+import { refreshTokenRepository } from '../repositories/refresh-token.repository.js';
 import { sendSuccess } from '../utils/api-response.js';
 import { setAuthCookies, clearAuthCookies } from '../utils/cookies.js';
 import { REFRESH_TOKEN_COOKIE } from '../config/constants.js';
@@ -18,7 +19,16 @@ export const authController = {
     return sendSuccess(res, { user, accessToken: tokens.accessToken });
   },
 
-  async logout(_req: Request, res: Response) {
+  async logout(req: Request, res: Response) {
+    const token = req.cookies?.[REFRESH_TOKEN_COOKIE] as string | undefined;
+    if (token) {
+      // Revoke the refresh token if it exists
+      try {
+        await refreshTokenRepository.revoke(token);
+      } catch {
+        // Ignore errors if token doesn't exist or is already revoked
+      }
+    }
     clearAuthCookies(res);
     return sendSuccess(res, { message: 'Logged out' });
   },

@@ -6,11 +6,14 @@ const FIFTEEN_MIN = 15 * 60 * 1000;
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
 function baseOptions(): CookieOptions {
+  const secure = env.COOKIE_SECURE || isProd;
   return {
     httpOnly: true,
-    secure: env.COOKIE_SECURE || isProd,
-    sameSite: isProd ? 'none' : 'lax',
+    secure,
+    // sameSite: 'none' requires secure: true
+    sameSite: secure ? 'none' : 'lax',
     path: '/',
+    ...(env.COOKIE_DOMAIN && { domain: env.COOKIE_DOMAIN }),
   };
 }
 
@@ -20,6 +23,6 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
 }
 
 export function clearAuthCookies(res: Response): void {
-  res.clearCookie(ACCESS_TOKEN_COOKIE, baseOptions());
-  res.clearCookie(REFRESH_TOKEN_COOKIE, baseOptions());
+  res.clearCookie(ACCESS_TOKEN_COOKIE, { ...baseOptions(), maxAge: 0 });
+  res.clearCookie(REFRESH_TOKEN_COOKIE, { ...baseOptions(), maxAge: 0 });
 }

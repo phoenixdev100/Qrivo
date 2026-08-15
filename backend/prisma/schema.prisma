@@ -1,6 +1,5 @@
 // Qrivo - Prisma schema
-// Provider: PostgreSQL (Neon). Pooled connection via DATABASE_URL for runtime,
-// direct connection via DIRECT_URL for migrations/CLI.
+// Provider: PostgreSQL (Neon). Connection via DATABASE_URL.
 
 generator client {
   provider = "prisma-client-js"
@@ -81,12 +80,29 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  qrCodes   QRCode[]
-  folders   Folder[]
-  auditLogs AuditLog[]
+  qrCodes       QRCode[]
+  folders       Folder[]
+  auditLogs     AuditLog[]
+  refreshTokens RefreshToken[]
 
   @@index([email])
   @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 model Folder {
@@ -126,6 +142,8 @@ model QRCode {
   @@index([folderId])
   @@index([code])
   @@index([status])
+  @@index([userId, status]) // Composite index for user's active QR codes
+  @@index([createdAt]) // For sorting by creation date
   @@map("qr_codes")
 }
 
@@ -223,8 +241,9 @@ model Scan {
 
   @@index([qrCodeId])
   @@index([scannedAt])
-  @@index([qrCodeId, scannedAt])
+  @@index([qrCodeId, scannedAt]) // Composite for analytics queries
   @@index([visitorHash])
+  @@index([country]) // For geographic analytics
   @@map("scans")
 }
 
