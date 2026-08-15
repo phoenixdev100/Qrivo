@@ -186,10 +186,8 @@ export default function QrCodesPage() {
     
     // Generate QR code from tracking URL (not content directly)
     try {
-      // Remove /api/v1 prefix if present to get base URL
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const baseUrl = apiUrl.replace(/\/api\/v1$/, '');
-      const trackingUrl = `${baseUrl}/q/${qr.code}`;
+      // Use centralized tracking URL function
+      const trackingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/q/${qr.code}`;
       const dataUrl = await QRCode.toDataURL(trackingUrl, {
         width: 512,
         margin: 2,
@@ -214,10 +212,8 @@ export default function QrCodesPage() {
     if (!qrToView) return;
     
     try {
-      // Remove /api/v1 prefix if present to get base URL
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const baseUrl = apiUrl.replace(/\/api\/v1$/, '');
-      const trackingUrl = `${baseUrl}/q/${qrToView.code}`;
+      // Use frontend site URL for tracking URL
+      const trackingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/q/${qrToView.code}`;
       const options = {
         width: 512,
         margin: 2,
