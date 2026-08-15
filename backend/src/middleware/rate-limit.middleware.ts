@@ -25,6 +25,34 @@ export const authLimiter = createLimiter(
   'Too many attempts. Please try again later.',
 );
 
+// Token refresh - more restrictive to prevent abuse
+export const refreshLimiter = createLimiter(
+  60 * 1000,
+  10,
+  'Too many refresh attempts. Please try again later.',
+);
+
+// Logout - moderate limit
+export const logoutLimiter = createLimiter(
+  60 * 1000,
+  30,
+  'Too many logout attempts. Please try again later.',
+);
+
+// User profile/me endpoint
+export const meLimiter = createLimiter(
+  60 * 1000,
+  60,
+  'Too many requests. Please slow down.',
+);
+
+// Health check endpoint
+export const healthLimiter = createLimiter(
+  60 * 1000,
+  60,
+  'Too many health check requests. Please slow down.',
+);
+
 // QR creation.
 export const createQrLimiter = createLimiter(
   60 * 1000,

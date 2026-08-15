@@ -7,6 +7,7 @@ import { scanController } from './controllers/scan.controller.js';
 import { asyncHandler } from './utils/async-handler.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import { scanLimiter } from './middleware/rate-limit.middleware.js';
+import { timeoutMiddleware } from './middleware/timeout.middleware.js';
 import { API_PREFIX, BODY_LIMIT, SCAN_PATH_PREFIX } from './config/constants.js';
 import { env } from './config/env.js';
 
@@ -21,6 +22,15 @@ export function createApp(): Application {
       // The scan landing/redirect is a plain API; CSP is managed by the frontend app.
       contentSecurityPolicy: false,
       crossOriginResourcePolicy: { policy: 'cross-origin' },
+      // Additional security headers
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+      noSniff: true,
+      frameguard: { action: 'deny' },
+      xssFilter: true,
     }),
   );
 
@@ -30,6 +40,9 @@ export function createApp(): Application {
       credentials: true,
     }),
   );
+
+  // Apply timeout middleware before body parsing
+  app.use(timeoutMiddleware);
 
   app.use(express.json({ limit: BODY_LIMIT }));
   app.use(express.urlencoded({ extended: true, limit: BODY_LIMIT }));

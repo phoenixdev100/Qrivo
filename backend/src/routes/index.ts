@@ -7,12 +7,12 @@ import folderRoutes from './folder.routes.js';
 import adminRoutes from './admin.routes.js';
 import { scanController } from '../controllers/scan.controller.js';
 import { asyncHandler } from '../utils/async-handler.js';
-import { apiLimiter } from '../middleware/rate-limit.middleware.js';
+import { apiLimiter, healthLimiter } from '../middleware/rate-limit.middleware.js';
 
 // Mounted at /api/v1
 const apiRouter = Router();
 
-apiRouter.get('/health', (_req, res) => {
+apiRouter.get('/health', healthLimiter, (_req, res) => {
   res.json({ success: true, data: { status: 'ok', time: new Date().toISOString() } });
 });
 
