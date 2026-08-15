@@ -11,7 +11,7 @@ export const refreshTokenRepository = {
   },
 
   revoke(token: string) {
-    return prisma.refreshToken.update({
+    return prisma.refreshToken.updateMany({
       where: { token },
       data: { revoked: true },
     });
