@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   BarChart3,
-  ChevronDown,
   FolderTree,
   LayoutDashboard,
   LogOut,
@@ -14,7 +13,6 @@ import {
   QrCode,
   Settings,
   TrendingUp,
-  User,
 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { Button } from '@/components/ui/button';
@@ -23,6 +21,7 @@ import { Dropdown } from '@/components/ui/dropdown';
 import { useAuth } from '@/hooks/use-auth';
 import { analyticsApi } from '@/lib/api/analytics';
 import { qrApi } from '@/lib/api/qr';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -252,47 +251,47 @@ export default function AnalyticsPage() {
 
             {/* Stats cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-700 dark:bg-slate-800">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-card dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Scans</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{analytics?.totalScans || 0}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-50">{analytics?.totalScans || 0}</p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">
-                    <BarChart3 className="h-5 w-5" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">
+                    <BarChart3 className="h-4 w-4" />
                   </div>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-700 dark:bg-slate-800">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-card dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Unique Scans</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{analytics?.estimatedUniqueScans || 0}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-50">{analytics?.estimatedUniqueScans || 0}</p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                    <TrendingUp className="h-5 w-5" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                    <TrendingUp className="h-4 w-4" />
                   </div>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-700 dark:bg-slate-800">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-card dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Active QRs</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{analytics?.activeQrCodes || 0}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-50">{analytics?.activeQrCodes || 0}</p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                    <QrCode className="h-5 w-5" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                    <QrCode className="h-4 w-4" />
                   </div>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-700 dark:bg-slate-800">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-card dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Scans Today</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{analytics?.scansToday || 0}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-50">{analytics?.scansToday || 0}</p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                    <FolderTree className="h-5 w-5" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                    <FolderTree className="h-4 w-4" />
                   </div>
                 </div>
               </div>
@@ -320,41 +319,47 @@ export default function AnalyticsPage() {
               <div className="space-y-6">
                 {/* Scan Activity Chart */}
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card dark:border-slate-700 dark:bg-slate-800">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">Scan Activity (Last 7 Days)</h3>
-                  {timeseries && timeseries.length > 0 ? (
-                    <div className="h-64 pl-8 pb-8">
-                      <div className="relative h-full flex items-end gap-2">
-                        {/* Y-axis labels */}
-                        <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between text-xs text-slate-500 dark:text-slate-400">
-                          {(() => {
-                            const max = Math.max(...timeseries.map((p: any) => p.count));
-                            const displayMax = max === 0 ? 5 : max; // Default to 5 if all zeros
-                            const mid = Math.round(displayMax / 2);
-                            return (
-                              <>
-                                <span>{displayMax}</span>
-                                <span>{mid}</span>
-                                <span>0</span>
-                              </>
-                            );
-                          })()}
-                        </div>
-                        {/* Chart bars */}
-                        <div className="flex-1 flex items-end gap-2 ml-2">
-                          {timeseries.map((point: any, index: number) => (
-                            <div key={index} className="flex-1 flex flex-col items-center">
-                              <div
-                                className="w-full bg-brand-500 rounded-t transition-all hover:bg-brand-600"
-                                style={{ height: `${Math.max((point.count / (Math.max(...timeseries.map((p: any) => p.count)) || 1)) * 100, 5)}%` }}
-                                title={`${point.date}: ${point.count} scans`}
-                              />
-                              <span className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                                {new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">
+                    Scan Activity {selectedQrId ? '(Selected QR)' : '(All QR Codes)'}
+                  </h3>
+                  {(selectedQrId ? timeseries : analytics?.timeseries) && (selectedQrId ? timeseries : analytics?.timeseries)?.length > 0 ? (
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={(selectedQrId ? timeseries : analytics.timeseries).map((point: any) => ({
+                          date: new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                          scans: point.count
+                        }))}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                          <XAxis
+                            dataKey="date"
+                            className="text-xs text-slate-500 dark:text-slate-400"
+                            tick={{ fontSize: 12 }}
+                          />
+                          <YAxis
+                            className="text-xs text-slate-500 dark:text-slate-400"
+                            tick={{ fontSize: 12 }}
+                            allowDecimals={false}
+                            domain={[0, 'auto']}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'white',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              color: '#1e293b'
+                            }}
+                            itemStyle={{ color: '#1e293b' }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="scans"
+                            stroke="#4F46E5"
+                            strokeWidth={2}
+                            dot={{ fill: '#4F46E5', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   ) : (
                     <p className="text-slate-500 dark:text-slate-400">No scan data available yet. Start scanning your QR codes to see activity.</p>
@@ -366,32 +371,32 @@ export default function AnalyticsPage() {
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card dark:border-slate-700 dark:bg-slate-800">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">Device Breakdown</h3>
                     <div className="flex items-center gap-8">
-                      <div className="relative w-32 h-32">
-                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                          {devices.map((device: any, index: number) => {
-                            const totalCount = devices.reduce((sum: number, d: any) => sum + (d.count || 0), 0);
-                            const count = device.count || 0;
-                            const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
-                            const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444'];
-                            const offset = devices.slice(0, index).reduce((sum: number, d: any) => {
-                              const dCount = d.count || 0;
-                              return sum + (totalCount > 0 ? (dCount / totalCount) * 100 : 0);
-                            }, 0);
-                            return (
-                              <circle
-                                key={index}
-                                cx="18"
-                                cy="18"
-                                r="15.9155"
-                                fill="transparent"
-                                stroke={colors[index % colors.length]}
-                                strokeWidth="3"
-                                strokeDasharray={`${percentage} ${100 - percentage}`}
-                                strokeDashoffset={offset}
-                              />
-                            );
-                          })}
-                        </svg>
+                      <div className="w-48 h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={devices.map((d: any) => ({ name: d.label || 'Unknown', value: d.count || 0 }))}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={55}
+                              outerRadius={70}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              {devices.map((_: any, index: number) => (
+                                <Cell key={`cell-${index}`} fill={['#4F46E5', '#10B981', '#F59E0B', '#EF4444'][index % 4]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                color: '#1e293b'
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </div>
                       <div className="flex-1 space-y-2">
                         {devices.map((device: any, index: number) => {
@@ -424,32 +429,32 @@ export default function AnalyticsPage() {
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card dark:border-slate-700 dark:bg-slate-800">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">Browser Breakdown</h3>
                     <div className="flex items-center gap-8">
-                      <div className="relative w-32 h-32">
-                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                          {browsers.map((browser: any, index: number) => {
-                            const totalCount = browsers.reduce((sum: number, b: any) => sum + (b.count || 0), 0);
-                            const count = browser.count || 0;
-                            const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
-                            const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444'];
-                            const offset = browsers.slice(0, index).reduce((sum: number, b: any) => {
-                              const bCount = b.count || 0;
-                              return sum + (totalCount > 0 ? (bCount / totalCount) * 100 : 0);
-                            }, 0);
-                            return (
-                              <circle
-                                key={index}
-                                cx="18"
-                                cy="18"
-                                r="15.9155"
-                                fill="transparent"
-                                stroke={colors[index % colors.length]}
-                                strokeWidth="3"
-                                strokeDasharray={`${percentage} ${100 - percentage}`}
-                                strokeDashoffset={offset}
-                              />
-                            );
-                          })}
-                        </svg>
+                      <div className="w-48 h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={browsers.map((d: any) => ({ name: d.label || 'Unknown', value: d.count || 0 }))}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={55}
+                              outerRadius={70}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              {browsers.map((_: any, index: number) => (
+                                <Cell key={`cell-${index}`} fill={['#4F46E5', '#10B981', '#F59E0B', '#EF4444'][index % 4]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                color: '#1e293b'
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </div>
                       <div className="flex-1 space-y-2">
                         {browsers.map((browser: any, index: number) => {
@@ -482,32 +487,32 @@ export default function AnalyticsPage() {
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card dark:border-slate-700 dark:bg-slate-800">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">Location Breakdown</h3>
                     <div className="flex items-center gap-8">
-                      <div className="relative w-32 h-32">
-                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                          {countries.map((country: any, index: number) => {
-                            const totalCount = countries.reduce((sum: number, c: any) => sum + (c.count || 0), 0);
-                            const count = country.count || 0;
-                            const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
-                            const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444'];
-                            const offset = countries.slice(0, index).reduce((sum: number, c: any) => {
-                              const cCount = c.count || 0;
-                              return sum + (totalCount > 0 ? (cCount / totalCount) * 100 : 0);
-                            }, 0);
-                            return (
-                              <circle
-                                key={index}
-                                cx="18"
-                                cy="18"
-                                r="15.9155"
-                                fill="transparent"
-                                stroke={colors[index % colors.length]}
-                                strokeWidth="3"
-                                strokeDasharray={`${percentage} ${100 - percentage}`}
-                                strokeDashoffset={offset}
-                              />
-                            );
-                          })}
-                        </svg>
+                      <div className="w-48 h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={countries.map((d: any) => ({ name: d.label || 'Unknown', value: d.count || 0 }))}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={55}
+                              outerRadius={70}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              {countries.map((_: any, index: number) => (
+                                <Cell key={`cell-${index}`} fill={['#4F46E5', '#10B981', '#F59E0B', '#EF4444'][index % 4]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                color: '#1e293b'
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </div>
                       <div className="flex-1 space-y-2">
                         {countries.map((country: any, index: number) => {

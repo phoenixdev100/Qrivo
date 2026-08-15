@@ -67,6 +67,33 @@ export const qrRepository = {
     ]);
   },
 
+  listByUserWithScanCount(userId: string, args: {
+    skip: number;
+    take: number;
+    search?: string;
+    folderId?: string;
+    status?: Prisma.QRCodeWhereInput['status'];
+  }) {
+    const where: Prisma.QRCodeWhereInput = {
+      userId,
+      status: args.status ?? { not: 'DELETED' },
+      ...(args.folderId ? { folderId: args.folderId } : {}),
+      ...(args.search
+        ? { name: { contains: args.search, mode: 'insensitive' } }
+        : {}),
+    };
+    return prisma.$transaction([
+      prisma.qRCode.findMany({
+        where,
+        include: withRelations,
+        orderBy: { createdAt: 'desc' },
+        skip: args.skip,
+        take: args.take,
+      }),
+      prisma.qRCode.count({ where }),
+    ]);
+  },
+
   countByUser(userId: string) {
     return prisma.qRCode.count({ where: { userId, status: { not: 'DELETED' } } });
   },

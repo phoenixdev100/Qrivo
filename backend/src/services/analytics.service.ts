@@ -86,12 +86,18 @@ export const analyticsService = {
     });
     const ids = qrIds.map((q) => q.id);
 
-    const [totalQrCodes, activeQrCodes, totalScans, scansToday] = await Promise.all([
+    const [totalQrCodes, activeQrCodes, totalScans, scansToday, uniqueScans] = await Promise.all([
       qrRepository.countByUser(userId),
       qrRepository.countActiveByUser(userId),
       ids.length ? prisma.scan.count({ where: { qrCodeId: { in: ids } } }) : Promise.resolve(0),
       ids.length
         ? prisma.scan.count({ where: { qrCodeId: { in: ids }, scannedAt: { gte: startOfToday() } } })
+        : Promise.resolve(0),
+      ids.length
+        ? prisma.scan.groupBy({
+            by: ['visitorHash'],
+            where: { qrCodeId: { in: ids }, visitorHash: { not: null } },
+          }).then((result) => result.length)
         : Promise.resolve(0),
     ]);
 
@@ -118,6 +124,7 @@ export const analyticsService = {
       totalQrCodes,
       activeQrCodes,
       totalScans,
+      estimatedUniqueScans: uniqueScans,
       scansToday,
       timeseries: Array.from(buckets.entries()).map(([date, count]) => ({ date, count })),
     };

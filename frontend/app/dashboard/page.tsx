@@ -70,20 +70,8 @@ export default function DashboardPage() {
         analyticsApi.overview(),
       ]);
       const qrItems = qrResponse.items || [];
-      
-      // Fetch individual analytics for each QR to get scan counts
-      const qrWithScans = await Promise.all(
-        qrItems.map(async (qr: any) => {
-          try {
-            const summary = await analyticsApi.summary(qr.id);
-            return { ...qr, scans: summary.totalScans || 0 };
-          } catch (error) {
-            return { ...qr, scans: 0 };
-          }
-        })
-      );
-      
-      setQrs(qrWithScans);
+
+      setQrs(qrItems);
       setStats({
         total: qrResponse.total || 0,
         scans: analyticsResponse.totalScans || 0,
@@ -338,23 +326,19 @@ export default function DashboardPage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-1">
-                    {qrs.map((qr, index) => (
-                      <div 
-                        key={qr.id} 
-                        className={`flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                          index === 0 ? 'rounded-t-xl' : ''
-                        } ${
-                          index === qrs.length - 1 ? 'rounded-b-xl' : ''
-                        }`}
+                  <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {qrs.map((qr) => (
+                      <div
+                        key={qr.id}
+                        className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
-                            <QrCode className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
+                            <QrCode className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                           </div>
                           <div>
-                            <p className="font-medium text-slate-900 dark:text-slate-50">{qr.name || 'Untitled'}</p>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">{qr.type}</p>
+                            <p className="font-medium text-sm text-slate-900 dark:text-slate-50">{qr.name || 'Untitled'}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{qr.type}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -367,7 +351,7 @@ export default function DashboardPage() {
                           >
                             {qr.status}
                           </span>
-                          <span className="text-sm text-slate-500 dark:text-slate-400">{qr.scans || 0} scans</span>
+                          <span className="text-sm text-slate-500 dark:text-slate-400">{qr.scanCount || 0} scans</span>
                         </div>
                       </div>
                     ))}

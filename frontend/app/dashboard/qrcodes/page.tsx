@@ -18,6 +18,7 @@ import {
   Plus,
   Power,
   QrCode,
+  Search,
   Settings,
   Trash2,
   X,
@@ -50,6 +51,7 @@ export default function QrCodesPage() {
   const [isRenaming, setIsRenaming] = useState(false);
   const [isDisabling, setIsDisabling] = useState<string | null>(null);
   const [qrMenuOpen, setQrMenuOpen] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const qrMenuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -87,22 +89,10 @@ export default function QrCodesPage() {
   const loadQrCodes = async () => {
     setIsLoadingQrs(true);
     try {
-      const response = await qrApi.list({});
+      const response = await qrApi.list({ search: searchQuery });
       const qrItems = response.items || [];
-      
-      // Fetch individual analytics for each QR to get scan counts
-      const qrWithScans = await Promise.all(
-        qrItems.map(async (qr: any) => {
-          try {
-            const summary = await analyticsApi.summary(qr.id);
-            return { ...qr, scans: summary.totalScans || 0 };
-          } catch (error) {
-            return { ...qr, scans: 0 };
-          }
-        })
-      );
-      
-      setQrs(qrWithScans);
+
+      setQrs(qrItems);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Failed to load QR codes:', error);
@@ -111,6 +101,16 @@ export default function QrCodesPage() {
       setIsLoadingQrs(false);
     }
   };
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (user) {
+        loadQrCodes();
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, user]);
 
   const handleDelete = async (id: string) => {
     setQrToDelete(id);
@@ -378,9 +378,27 @@ export default function QrCodesPage() {
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Your QR Codes</h2>
                 <p className="mt-1 text-slate-600 dark:text-slate-400">Manage and track all your QR codes.</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search QR codes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 w-64 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
                 <Link href="/dashboard/qrcodes/new">
-                  <Button size="sm">
+                  <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Create QR Code
                   </Button>
@@ -409,24 +427,24 @@ export default function QrCodesPage() {
               ) : (
                 <div className="divide-y divide-slate-200 dark:divide-slate-700">
                   {qrs.map((qr, index) => (
-                    <div 
-                      key={qr.id} 
-                      className={`flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                    <div
+                      key={qr.id}
+                      className={`flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700 ${
                         index === 0 ? 'rounded-t-xl' : ''
                       } ${
                         index === qrs.length - 1 ? 'rounded-b-xl' : ''
                       }`}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
-                          <QrCode className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
+                          <QrCode className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-slate-50">{qr.name || 'Untitled'}</p>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">{qr.type}</p>
+                          <p className="font-medium text-sm text-slate-900 dark:text-slate-50">{qr.name || 'Untitled'}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{qr.type}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <span
                           className={`rounded-full px-2 py-1 text-xs font-medium ${
                             qr.status === 'ACTIVE'
@@ -436,7 +454,7 @@ export default function QrCodesPage() {
                         >
                           {qr.status}
                         </span>
-                        <span className="text-sm text-slate-500 dark:text-slate-400">{qr.scans || 0} scans</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{qr.scanCount || 0} scans</span>
                         <div className="relative" ref={qrMenuRef}>
                           <button
                             onClick={() => setQrMenuOpen(qrMenuOpen === qr.id ? null : qr.id)}
