@@ -37,6 +37,14 @@ async function rawRequest<T>(path: string, options: RequestOptions): Promise<Res
   });
 }
 
+// Public request without credentials for scan resolution
+async function publicRequest<T>(url: string): Promise<Response> {
+  return fetch(url, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+}
+
 let refreshPromise: Promise<boolean> | null = null;
 
 async function tryRefresh(): Promise<boolean> {

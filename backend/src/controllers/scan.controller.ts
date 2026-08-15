@@ -31,6 +31,18 @@ export const scanController = {
     return res.redirect(302, frontendQrUrl(code, result.state));
   },
 
+  // Public: GET /api/v1/public/scan/:code - JSON response for frontend scan resolution
+  async resolveJson(req: Request, res: Response) {
+    const { code } = req.params;
+    const result = await scanService.resolveAndRecord(code, {
+      ip: getClientIp(req),
+      userAgent: req.headers['user-agent'],
+      geo: parseGeo(req),
+    });
+
+    return sendSuccess(res, result);
+  },
+
   // Public: GET /api/v1/public/qr/:code - content for the landing page (no scan recorded).
   async publicContent(req: Request, res: Response) {
     const data = await scanService.getPublicContent(req.params.code);

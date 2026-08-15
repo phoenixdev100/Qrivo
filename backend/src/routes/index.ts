@@ -25,5 +25,7 @@ apiRouter.use('/admin', apiLimiter, adminRoutes);
 
 // Public content for the scan landing page (no scan recorded, no auth).
 apiRouter.get('/public/qr/:code', asyncHandler(scanController.publicContent));
+// Public scan resolution for frontend (records scan, returns JSON).
+apiRouter.get('/public/scan/:code', asyncHandler(scanController.resolveJson));
 
 export default apiRouter;

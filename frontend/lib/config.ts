@@ -3,7 +3,7 @@
 
 export const config = {
   apiUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api/v1',
-  scanBaseUrl: process.env.NEXT_PUBLIC_SCAN_BASE_URL ?? 'http://localhost:5000',
+  scanBaseUrl: process.env.NEXT_PUBLIC_SCAN_BASE_URL ?? 'http://localhost:3000',
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
 } as const;
 
